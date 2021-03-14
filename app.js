@@ -101,7 +101,8 @@ app.get('/error', (req, res) => {
     res.render('error.ejs');
 });
 
-app.post('/uploadFile', (req, res) => {
+app.get('/uploadFile', (req, res) => {
+    console.log(req.query.fileName);
     return;
 });
 

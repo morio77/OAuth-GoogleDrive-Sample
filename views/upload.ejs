@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="uploadFile.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <title>アップロード画面</title>
 </head>
 
@@ -15,15 +17,33 @@
         </h1>
     </div>
 
-    <div class="img-block">
-        <img src="./images/natto1.png" alt="納豆かけご飯">
-    </div>
-    <div class="img-block">
-        <img src="./images/natto2.png" alt="納豆パック">
-    </div>
-    <div class="img-block">
-        <img src="./images/natto3.png" alt="納豆巻き">
+    <div class='images' id="images">
+        <div class="img-block">
+            <img v-on:click="upload('natto1.png')" src="./images/natto1.png" alt="納豆かけご飯">
+        </div>
+        <div class="img-block">
+            <img v-on:click="upload('natto2.png')" src="./images/natto2.png" alt="納豆パック">
+        </div>
+        <div class="img-block">
+            <img v-on:click="upload('natto3.png')"src="./images/natto3.png" alt="納豆巻き">
+        </div>
     </div>
 </body>
+
+<!-- Vue.jsの実装 -->
+<script>
+    const app = new Vue({
+        el: "#images",
+        methods: {
+            upload: function (fileName) {
+                axios.get('<%= process.env.NETWORK_URI %>/uploadFile' + '?fileName=' + fileName).then(response => {
+                    console.log(response);
+                }).catch(error => {
+                    console.log(error);
+                })
+            },
+        }
+    })
+</script>
 
 </html>
