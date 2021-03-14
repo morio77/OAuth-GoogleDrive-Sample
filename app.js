@@ -8,7 +8,8 @@ const crypto = require('crypto');
 
 const app = express();
 app.set('view engine', 'ejs');
-app.use(express.static(__dirname + '/views'))
+app.use(express.static(__dirname + '/views'));
+app.use(express.static(__dirname + '/styles'));
 app.use(
     session({
         secret: process.env.SESSION_ID_SECRET,
@@ -74,7 +75,6 @@ app.get('/callback', (req, res) => {
         redirect_uri: `${process.env.NETWORK_URI}/callback`,
     }
     oauth2Client.getToken(getTokenOptions, function(err, tokens) {
-
         if (tokens) {
             req.session.accessToken = tokens.access_token;
             req.session.refreshTken = tokens.refresh_token;

@@ -1,0 +1,22 @@
+body {
+    width: 100%;
+    text-align: center;
+}
+
+.images {
+    margin-right: auto;
+    margin-left : auto;
+}
+
+.img-block {
+    display: inline-block;
+    padding: 20px;
+}
+
+img:hover {
+    opacity: 0.5;
+ }
+
+img {
+    width: 200px;
+}
