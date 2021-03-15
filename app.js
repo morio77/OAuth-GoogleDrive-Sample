@@ -5,6 +5,7 @@ const session = require('express-session');
 const express = require('express');
 const google = require('googleapis').google;
 const crypto = require('crypto');
+const fs = require("fs");
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -97,13 +98,37 @@ app.get('/uploadPage', (req, res) => {
     res.render('upload.ejs');
 });
 
-app.get('/error', (req, res) => {
-    res.render('error.ejs');
+app.get('/uploadFile', (req, res) => {
+    oauth2Client.setCredentials({
+        access_token: req.session.accessToken,
+        refreshTken: req.session.refreshTken,
+    });
+    const drive = google.drive({version: 'v3', auth: oauth2Client});
+
+    var fileMetadata = {
+        'name': 'photo.png'
+      };
+      var media = {
+        mimeType: 'image/png',
+        body: fs.createReadStream("./views/images/" + req.query.fileName)
+      };
+      drive.files.create({
+        resource: fileMetadata,
+        media: media,
+        fields: 'id'
+      }, function (err, file) {
+        if (err) {
+          // Handle error
+          console.error(err);
+        } else {
+          console.log('File Id: ', file.id);
+        }
+      });
+    return;
 });
 
-app.get('/uploadFile', (req, res) => {
-    console.log(req.query.fileName);
-    return;
+app.get('/error', (req, res) => {
+    res.render('error.ejs');
 });
 
 app.listen(process.env.SERVER_PORT);
