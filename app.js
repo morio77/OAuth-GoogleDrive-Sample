@@ -6,6 +6,7 @@ const express = require('express');
 const google = require('googleapis').google;
 const crypto = require('crypto');
 const fs = require("fs");
+const path = require('path')
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -37,6 +38,7 @@ app.get('/', (req, res) => {
 app.get('/authorization', (req, res) => {
     // すでにアクセストークンがあれば、アップロード画面へ遷移
     if (req.session.accessToken) {
+        res.redirect(`${process.env.NETWORK_URI}/uploadPage`);
         return;
     }
 
@@ -105,25 +107,25 @@ app.get('/uploadFile', (req, res) => {
     });
     const drive = google.drive({version: 'v3', auth: oauth2Client});
 
-    var fileMetadata = {
-        'name': 'photo.png'
-      };
-      var media = {
-        mimeType: 'image/png',
-        body: fs.createReadStream("./views/images/" + req.query.fileName)
-      };
-      drive.files.create({
+    // ファイルアップロード
+    const fileMetadata = {
+        'name': req.query.fileName
+    };
+    const media = {
+        mimeType: 'image/' + path.extname(req.query.fileName),
+        body: fs.createReadStream('./views/images/' + req.query.fileName)
+    };
+    drive.files.create({
         resource: fileMetadata,
         media: media,
         fields: 'id'
-      }, function (err, file) {
+    }, function (err, file) {
         if (err) {
-          // Handle error
-          console.error(err);
+            console.error(err);
         } else {
-          console.log('File Id: ', file.id);
+            console.log('File Id: ', file.id);
         }
-      });
+    });
     return;
 });
 
