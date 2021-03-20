@@ -66,7 +66,7 @@ app.get('/callback', (req, res) => {
         req.session.state = undefined;
         req.session.codeVerifier = undefined;
         req.session.accessToken = undefined;
-        req.session.refreshTken = undefined;
+        req.session.refreshToken = undefined;
         res.redirect(`${process.env.NETWORK_URI}`);
         return;
     }
@@ -80,7 +80,7 @@ app.get('/callback', (req, res) => {
     oauth2Client.getToken(getTokenOptions, function(err, tokens) {
         if (tokens) {
             req.session.accessToken = tokens.access_token;
-            req.session.refreshTken = tokens.refresh_token;
+            req.session.refreshToken = tokens.refresh_token;
 
             res.redirect(`${process.env.NETWORK_URI}/uploadPage`);
             return;
@@ -89,7 +89,7 @@ app.get('/callback', (req, res) => {
             req.session.state = undefined;
             req.session.codeVerifier = undefined;
             req.session.accessToken = undefined;
-            req.session.refreshTken = undefined;
+            req.session.refreshToken = undefined;
             res.redirect(`${process.env.NETWORK_URI}/error`);
             return;
         }
@@ -103,7 +103,7 @@ app.get('/uploadPage', (req, res) => {
 app.get('/uploadFile', (req, res) => {
     oauth2Client.setCredentials({
         access_token: req.session.accessToken,
-        refreshTken: req.session.refreshTken,
+        refreshToken: req.session.refreshToken,
     });
     const drive = google.drive({version: 'v3', auth: oauth2Client});
 
