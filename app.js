@@ -6,7 +6,8 @@ const express = require('express');
 const google = require('googleapis').google;
 const crypto = require('crypto');
 const fs = require("fs");
-const path = require('path')
+const path = require('path');
+const { digitalassetlinks } = require('googleapis/build/src/apis/digitalassetlinks');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -100,14 +101,18 @@ app.get('/uploadPage', (req, res) => {
     res.render('upload.ejs');
 });
 
-app.get('/uploadFile', (req, res) => {
-    oauth2Client.setCredentials({
-        access_token: req.session.accessToken,
-        refreshToken: req.session.refreshToken,
-    });
-    const drive = google.drive({version: 'v3', auth: oauth2Client});
+app.get('/uploadFile', async (req, res) => {
 
-    // ファイルアップロード
+    // Googleドライブにファイルをアップロードする関数
+    async function uploadFile(driveAPIClient, fileMetadata, media) {
+        const res = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+        });
+        return res.status === 200 ? true : false;
+    }
+
+    // アップロードするファイルのmeta情報などを定義しておく
     const fileMetadata = {
         'name': req.query.fileName
     };
@@ -115,17 +120,38 @@ app.get('/uploadFile', (req, res) => {
         mimeType: 'image/' + path.extname(req.query.fileName),
         body: fs.createReadStream('./views/images/' + req.query.fileName)
     };
-    drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'id'
-    }, function (err, file) {
-        if (err) {
-            console.error(err);
-        } else {
-            console.log('File Id: ', file.id);
-        }
+    
+    // セッション変数に含まれているアクセストークンを使ってドライブAPIクライアントを作成する
+    const oauth2Client = new google.auth.OAuth2(process.env.GOOGLEDRIVE_CLIENT_ID, process.env.GOOGLEDRIVE_CLIENT_SECRET);
+    oauth2Client.setCredentials({
+        access_token: req.session.accessToken,
+        refresh_token: req.session.refreshToken,
     });
+    const driveAPIClient = google.drive({version: 'v3', auth: oauth2Client});
+
+    // アップロードする。失敗したら、トークンを更新してリトライする
+    if (!await uploadFile(driveAPIClient, fileMetadata, media)) {
+        oauth2Client.refreshAccessToken(async function(err, tokens) {
+            if (err) { // トークンのリフレッシュに失敗したらエラー画面へ
+                console.log(err);
+                res.redirect(`${process.env.NETWORK_URI}/error`);
+            }
+            else { // トークンのリフレッシュに成功したら、新たなドライブAPIクライアントでリトライする
+                req.session.accessToken = tokens.access_token;
+                req.session.refreshToken = tokens.refresh_token;
+                oauth2Client.setCredentials(tokens);
+                const driveAPIClient = google.drive({version: 'v3', auth: oauth2Client});
+                // アップロードする。失敗したら、保持するトークンなどを破棄してエラー画面へ
+                if (!await uploadFile(driveAPIClient, fileMetadata, media)) {
+                    req.session.state = undefined;
+                    req.session.codeVerifier = undefined;
+                    req.session.accessToken = undefined;
+                    req.session.refreshToken = undefined;
+                    res.redirect(`${process.env.NETWORK_URI}/error`);
+                }
+            }
+        });
+    }
     return;
 });
 
