@@ -24,8 +24,6 @@ app.use(
     })
 );
 
-const oauth2Client = new google.auth.OAuth2(process.env.GOOGLEDRIVE_CLIENT_ID, process.env.GOOGLEDRIVE_CLIENT_SECRET);
-
 // Google Drive APIに関する定数
 SCOPE = [
     "https://www.googleapis.com/auth/drive.file",
@@ -46,6 +44,8 @@ app.get('/authorization', (req, res) => {
     req.session.state = utils.urlSafeRandomChars(256);
     req.session.codeVerifier = utils.urlSafeRandomChars(256);
     const codeChallenge = utils.getCodeChallengeFromCodeVerifier(req.session.codeVerifier);
+
+    const oauth2Client = new google.auth.OAuth2(process.env.GOOGLEDRIVE_CLIENT_ID, process.env.GOOGLEDRIVE_CLIENT_SECRET);
 
     const authUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline', // リフレッシュトークンをクエリに含めてもらう
@@ -71,6 +71,8 @@ app.get('/callback', (req, res) => {
         res.redirect(`${process.env.NETWORK_URI}`);
         return;
     }
+
+    const oauth2Client = new google.auth.OAuth2(process.env.GOOGLEDRIVE_CLIENT_ID, process.env.GOOGLEDRIVE_CLIENT_SECRET);
     
     // tokenを取得しにいく
     const getTokenOptions = {
@@ -134,6 +136,10 @@ app.get('/uploadFile', async (req, res) => {
         oauth2Client.refreshAccessToken(async function(err, tokens) {
             if (err) { // トークンのリフレッシュに失敗したらエラー画面へ
                 console.log(err);
+                req.session.state = undefined;
+                req.session.codeVerifier = undefined;
+                req.session.accessToken = undefined;
+                req.session.refreshToken = undefined;
                 res.redirect(`${process.env.NETWORK_URI}/error`);
             }
             else { // トークンのリフレッシュに成功したら、新たなドライブAPIクライアントでリトライする
