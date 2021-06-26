@@ -107,7 +107,7 @@ app.get('/uploadFile', async (req, res) => {
 
     // Googleドライブにファイルをアップロードする関数
     async function uploadFile(driveAPIClient, fileMetadata, media) {
-        const res = await drive.files.create({
+        const res = await driveAPIClient.files.create({
             resource: fileMetadata,
             media: media,
         });
